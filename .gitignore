@@ -1,0 +1,24 @@
+# ── Copyrighted client material — DO NOT commit (publisher IP + too large for GitHub) ──
+# (the APK, extracted assets, libil2cpp.so, global-metadata.dat, decompiled dump)
+*.apk
+apk/
+analysis/dump/
+analysis/*.out.txt
+captures/
+
+# ── Third-party tools (download separately, see ROADMAP) ──
+tools/Il2CppDumper/
+tools/*.zip
+
+# ── Python / Node ──
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+
+# ── OS / editor ──
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/

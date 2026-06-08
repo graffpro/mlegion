@@ -1,0 +1,321 @@
+====================================================================================================
+SYSTEM / HANDSHAKE RANGE  (msg_id < 40)
+====================================================================================================
+  [   2] server_version_c2s                         c2s  { (empty) }
+  [   3] server_version_s2c                         s2c  { string v }
+  [   4] user_auth_c2s                              c2s  { kvobject[] elems }
+  [   5] user_auth_fail_s2c                         s2c  { int reasonid }
+  [   6] random_create_role_c2s                     c2s  { int classtype }
+  [   7] random_create_role_s2c                     s2c  { int classtype, string name }
+  [   8] create_role_request_c2s                    c2s  { string name, int classtype }
+  [   9] create_role_failed_s2c                     s2c  { int errno }
+  [  10] delete_role_request_c2s                    c2s  { long roleid }
+  [  11] delete_role_failed_s2c                     s2c  { int errno }
+  [  12] role_join_game_c2s                         c2s  { long roleid, string mac_address }
+  [  13] role_join_game_failed_s2c                  s2c  { int errno }
+  [  14] player_role_list_s2c                       s2c  { r[] roles }
+  [  15] user_auth_succese_s2c                      s2c  { string authkey, string account, string session }
+  [  16] init_role_info_s2c                         s2c  { o role_attr }
+  [  17] create_role_succese_s2c                    s2c  { long roleid }
+  [  18] init_module_c2s                            c2s  { (empty) }
+  [  19] user_request_info_c2s                      c2s  { string account, string key, string sign, uint sn }
+  [  20] request_proc_error_s2c                     s2c  { int errno, uint sn }
+  [  21] user_request_info_s2c                      s2c  { uint sn }
+  [  22] tcp_serial_number_s2c                      s2c  { uint sn }
+  [  23] tcp_serial_number_ack_c2s                  c2s  { uint sn }
+  [  25] user_reconnect_c2s                         c2s  { long roleid, string key }
+  [  26] user_exit_c2s                              c2s  { (empty) }
+  [  27] user_exit_s2c                              s2c  { int errno }
+  [  28] user_reconnect_s2c                         s2c  { (empty) }
+  [  29] block_s2c                                  s2c  { int type, int time }
+  [  30] user_logout_c2s                            c2s  { (empty) }
+  [  31] user_logout_s2c                            s2c  { r[] roles }
+  [  32] role_join_game_success_s2c                 s2c  { (empty) }
+  [  33] init_role_finish_s2c                       s2c  { byte is_new_role, byte is_plot_script }
+
+====================================================================================================
+CRITICAL-PATH MESSAGES  (name matches login/role/enter/etc.)
+====================================================================================================
+
+### 'login'  (8)
+  [1281] login_gift_error_s2c                       s2c  { int errno }
+  [1282] login_gift_init_s2c                        s2c  { byte act_tag, int left_sec, byte recv_tag }
+  [1283] login_gift_reinit_s2c                      s2c  { byte act_tag, int left_sec, byte recv_tag }
+  [1284] login_gift_update_s2c                      s2c  { byte act_tag, int left_sec, byte recv_tag }
+  [1285] login_gift_recv_tag_update_s2c             s2c  { byte recv_tag }
+  [1286] login_gift_recv_c2s                        c2s  { (empty) }
+  [1287] login_gift_recv_success_s2c                s2c  { rw[] rewards }
+  [2074] fresh_gift_login_days_update_s2c           s2c  { int login_days }
+
+### 'role'  (27)
+  [   6] random_create_role_c2s                     c2s  { int classtype }
+  [   7] random_create_role_s2c                     s2c  { int classtype, string name }
+  [   8] create_role_request_c2s                    c2s  { string name, int classtype }
+  [   9] create_role_failed_s2c                     s2c  { int errno }
+  [  10] delete_role_request_c2s                    c2s  { long roleid }
+  [  11] delete_role_failed_s2c                     s2c  { int errno }
+  [  12] role_join_game_c2s                         c2s  { long roleid, string mac_address }
+  [  13] role_join_game_failed_s2c                  s2c  { int errno }
+  [  14] player_role_list_s2c                       s2c  { r[] roles }
+  [  16] init_role_info_s2c                         s2c  { o role_attr }
+  [  17] create_role_succese_s2c                    s2c  { long roleid }
+  [  32] role_join_game_success_s2c                 s2c  { (empty) }
+  [  33] init_role_finish_s2c                       s2c  { byte is_new_role, byte is_plot_script }
+  [  81] role_join_map_s2c                          s2c  { int mapid, byte battle_faction }
+  [  85] role_levelup_s2c                           s2c  { kvobject[] b_attrs, kvobject[] a_attrs }
+  [  88] role_attr_error_s2c                        s2c  { int errno }
+  [  89] role_attr_init_s2c                         s2c  { byte name_gender_modify_tag }
+  [ 105] chat_check_rolename_c2s                    c2s  { string rolename }
+  [ 106] chat_check_rolename_res_s2c                s2c  { string rolename, byte res }
+  [ 302] role_move_c2s                              c2s  { uint time, int posx, int posy, int targetx, int targety }
+  [ 303] role_move_s2c                              s2c  { long id, uint time, int posx, int posy, int targetx, int targety }
+  [ 306] role_join_world_c2s                        c2s  { (empty) }
+  [ 401] inspect_role_base_c2s                      c2s  { string role_name, byte type }
+  [ 402] inspect_role_base_s2c                      s2c  { display_role d_role, int vip, long fightforce, string guildname, int arena_rank, ho[] heros, i[] items, hero_skill[] hero_skills, int[] bookids, field[] fields, hero_points[] point_infos, byte king_guild_tag, int legend, horse[] horse, i[] treasures, byte type, int be_like_count, int be_hate_count, i[] souls, byte is_same_server, byte force, byte force_position, int medal, byte mainland_position, string server_name, string leaguename }
+  [ 409] inspect_role_base_generic_c2s              c2s  { long roleid, byte type }
+  [ 548] lookup_role_c2s                            c2s  { string rolename }
+  [ 549] lookup_role_s2c                            s2c  { byte lookup_res }
+
+### 'server'  (8)
+  [   2] server_version_c2s                         c2s  { (empty) }
+  [   3] server_version_s2c                         s2c  { string v }
+  [  45] tcp_server_disconnect_s2c                  s2c  { string reason }
+  [ 821] server_day_init_s2c                        s2c  { int timestamp }
+  [ 822] server_day_change_s2c                      s2c  { int timestamp }
+  [ 951] server_battle_error_s2c                    s2c  { int errno }
+  [ 952] server_battle_create_c2s                   c2s  { (empty) }
+  [ 953] server_battle_create_success_s2c           s2c  { (empty) }
+
+### 'enter'  (8)
+  [1408] guild_enter_building_c2s                   c2s  { (empty) }
+  [1409] guild_enter_building_ok_s2c                s2c  { (empty) }
+  [2255] guild_boss_enter_map_c2s                   c2s  { (empty) }
+  [2256] guild_boss_enter_map_s2c                   s2c  { int cur_protoid, int inspire, int boss_level, long today_damage, int left_hp_percent, g_boss_d_rank[] rank, long self_damage, int index, int left_sec }
+  [3079] dungeon_enter_c2s                          c2s  { (empty) }
+  [3099] dungeon_enter_s2c                          s2c  { byte enter_type }
+  [3609] league_enter_c2s                           c2s  { (empty) }
+  [3610] league_enter_ok_s2c                        s2c  { (empty) }
+
+### 'create'  (6)
+  [ 210] create_dynamic_monster_s2c                 s2c  { hero_bdata hero, int teamindex, int duration }
+  [1087] group_create_c2s                           c2s  { int outpostid }
+  [1406] guild_create_c2s                           c2s  { string guildname, int badge }
+  [1407] guild_create_success_s2c                   s2c  { string guildname }
+  [3604] league_create_c2s                          c2s  { string leaguename, int flag, int language }
+  [3605] league_create_success_s2c                  s2c  { string leaguename }
+
+### 'connect'  (5)
+  [  25] user_reconnect_c2s                         c2s  { long roleid, string key }
+  [  28] user_reconnect_s2c                         s2c  { (empty) }
+  [  40] tcp_connect_s2c                            s2c  { string server_ip, ushort server_port, byte conn_type }
+  [  42] tcp_connect_c2s                            c2s  { byte conn_type, long roleid, string account, string key, string sign, uint sn }
+  [  43] tcp_connect_success_s2c                    s2c  { byte conn_type }
+
+### 'heart'  (2)
+  [  46] heart_beat_c2s                             c2s  { uint time }
+  [  47] heart_beat_s2c                             s2c  { uint time, uint stime }
+
+### 'serial'  (2)
+  [  22] tcp_serial_number_s2c                      s2c  { uint sn }
+  [  23] tcp_serial_number_ack_c2s                  c2s  { uint sn }
+
+### 'user_request'  (2)
+  [  19] user_request_info_c2s                      c2s  { string account, string key, string sign, uint sn }
+  [  21] user_request_info_s2c                      s2c  { uint sn }
+
+### 'init'  (171)
+  [  18] init_module_c2s                            c2s  { (empty) }
+  [ 108] chat_info_init_s2c                         s2c  { chat_info[] info_list }
+  [ 109] chat_times_init_s2c                        s2c  { int mainland_chat_times, int force_chat_times }
+  [ 110] chat_times_reinit_s2c                      s2c  { int mainland_chat_times, int force_chat_times }
+  [ 121] init_option_s2c                            s2c  { kvobject[] kv }
+  [ 152] init_onhands_item_s2c                      s2c  { i[] items }
+  [ 221] battle_data_init_s2c                       s2c  { byte battle_type, team_bdata[] attack, team_bdata[] defense, byte[] random_key, int instance_protoid, byte win_faction }
+  [ 354] quest_list_init_s2c                        s2c  { q[] quests, byte is_submitted }
+  [ 482] vip_init_s2c                               s2c  { int vip_level, int vip_exp, int[] received_gift_ids, int can_rec_vip_exp }
+  [ 486] init_vip_effect_left_value_s2c             s2c  { ik[] values }
+  [ 502] mail_info_init_s2c                         s2c  { mi[] mail_infos }
+  [ 542] init_friend_s2c                            s2c  { f[] relation, int phy_left_times }
+  [ 557] friend_init_be_apply_s2c                   s2c  { f[] friend_infos }
+  [ 580] charge_restrict_gift_init_s2c              s2c  { byte state }
+  [ 584] charge_double_vip_exp_act_init_s2c         s2c  { byte act_tag, int left_sec }
+  [ 585] charge_double_vip_exp_act_reinit_s2c       s2c  { byte act_tag, int left_sec }
+  [ 701] hero_init_s2c                              s2c  { ho[] heros }
+  [ 742] field_init_s2c                             s2c  { field[] fields }
+  [ 761] skill_init_s2c                             s2c  { hero_skill[] hero_skills }
+  [ 762] skill_battle_init_s2c                      s2c  { slot_skill[] lord_battle_skills }
+  [ 769] skill_arena_init_s2c                       s2c  { slot_skill[] lord_arena_skills }
+  [ 772] skill_practice_init_s2c                    s2c  { slot_skill[] lord_practice_skills }
+  [ 800] outpost_init_s2c                           s2c  { int last_beaten_outpostid, int next_outpostid, scene_process[] process, int[] outpost_ids, int[] received_boxids, int last_purgatory_outpostid, int next_purgatory_outpostid, int last_nightmare_outpostid, int next_nightmare_outpostid, int today_nightmare_times, int last_real_outpostid, int next_real_outpostid }
+  [ 856] physical_act_init_s2c                      s2c  { byte act_tag, int left_sec }
+  [ 857] physical_act_reinit_s2c                    s2c  { byte act_tag, int left_sec }
+  [ 882] exchange_init_s2c                          s2c  { int[] ids, orecord[] records }
+  [ 902] library_init_s2c                           s2c  { int[] bookids }
+  [ 914] recruit_init_s2c                           s2c  { int left_sec_normal, int left_sec_luxury, int[] collect_protoids, int[] prompt_protoids, byte normal_cost_draw_tag, byte luxury_cost_draw_tag }
+  [ 922] training_init_s2c                          s2c  { hero_training[] info }
+  [1002] gold_to_money_init_s2c                     s2c  { ushort buy_times }
+  [1006] gold_to_money_activity_init_s2c            s2c  { byte act_tag, int left_sec }
+  [1007] gold_to_money_activity_reinit_s2c          s2c  { byte act_tag, int left_sec }
+  [1037] bm_discount_init_s2c                       s2c  { byte college_discount_act_tag, int college_discount_left_sec }
+  [1038] bm_discount_reinit_s2c                     s2c  { byte college_discount_act_tag, int college_discount_left_sec }
+  [1052] point_init_s2c                             s2c  { hero_points[] point_infos }
+  [1067] racing_init_s2c                            s2c  { int left_sec, racing_data[] list }
+  [1122] group_outpost_beat_init_s2c                s2c  { int[] outpostids }
+  [1133] group_outpost_box_init_s2c                 s2c  { group_outpost_box[] boxs }
+  [1152] level_pack_init_s2c                        s2c  { level_pack[] list }
+  [1162] card_init_s2c                              s2c  { byte mcard_state, int mcard_left_days, byte gcard_state, byte pcard_state, int card_double_left_day }
+  [1182] register_gift_init_s2c                     s2c  { byte gift_tag }
+  [1202] snack_init_s2c                             s2c  { byte can_eat_type }
+  [1212] sign_in_init_s2c                           s2c  { int[] signed_days, int[] received_acc }
+  [1232] arena_init_s2c                             s2c  { int cur_rank, int best_rank, int challenge_times, int buy_times, int video_check_tag, byte have_won_arena, int top_check_tag }
+  [1259] arena_king_name_init_s2c                   s2c  { string name }
+  [1260] arena_king_name_reinit_s2c                 s2c  { string name }
+  [1272] open_gift_init_s2c                         s2c  { byte act_tag, int left_sec, byte count }
+  [1273] open_gift_reinit_s2c                       s2c  { byte act_tag, int left_sec, byte count }
+  [1302] achieve_init_s2c                           s2c  { ac[] achieves }
+  [1308] achieve_google_init_s2c                    s2c  { int[] google_protoids }
+  [1310] achieve_reinit_s2c                         s2c  { ac[] achieves }
+  [1322] icon_init_s2c                              s2c  { int[] bought_charge_icons }
+  [1352] friend_invite_init_s2c                     s2c  { string code, int submit_tag, int invite_count, int[] received_ids, string invite_rolename }
+  [1402] guild_init_s2c                             s2c  { long guildid, string guildname, long leaderid, string leadername, int leader_title, int position, int contribute_today, int guild_level, int guild_exp, int badge, int member_count, string claim, string notice, int donate_tag, int welfare_stat, int auto_dis_left_sec }
+  [1457] guild_store_init_s2c                       s2c  { gstore[] bought_list }
+  [1470] guild_be_applied_count_init_s2c            s2c  { int count }
+  [1472] guild_be_invited_guildids_init_s2c         s2c  { long[] guildids }
+  [1482] guild_q_init_s2c                           s2c  { g_q[] acc_list, g_q[] dis_list, g_dis_q[] can_dis_list }
+  [1511] g_cargo_init_s2c                           s2c  { int recved_times, int rob_times }
+  [1562] g_cargo_rmder_statu_init_s2c               s2c  { byte res_statu, byte invade_statu }
+  [1603] recruit_limit_act_init_s2c                 s2c  { byte status, int left_sec }
+  [1605] recruit_free_10_draw_init_s2c              s2c  { byte activity_tag, int left_sec, byte left_times_luxury, byte left_times_normal }
+  [1606] recruit_free_10_draw_reinit_s2c            s2c  { byte activity_tag, int left_sec, byte left_times_luxury, byte left_times_normal }
+  [1624] socially_google_rmder_status_init_s2c      s2c  { byte status }
+  [1651] event_reminder_init_s2c                    s2c  { event_rmder[] rmder_list, int[] open_activity_ids }
+  [1681] frame_init_s2c                             s2c  { int[] frameids, int cur_frameid }
+  [1702] defense_skill_init_s2c                     s2c  { defense_skill[] skillslist }
+  [1752] seize_init_s2c                             s2c  { int used_times, int bought_times, byte harvest_status, byte be_robbed_status, byte be_invaded_status }
+  [1852] limit_merchant_init_s2c                    s2c  { int[] bought_goods_ids }
+  [1872] foe_letter_init_s2c                        s2c  { fl[] letters }
+  [1902] tower_init_s2c                             s2c  { tower_data[] towers }
+  [1952] guild_war_init_s2c                         s2c  { int[] applied_points, int war_teamid, byte new_self_report_tag }
+  [2001] guild_war_straight_init_s2c                s2c  { g_war_point_straight[] list }
+  [2002] guild_war_straight_reinit_s2c              s2c  { g_war_point_straight[] list }
+  [2052] growth_fund_init_s2c                       s2c  { byte tag, int[] recved_list }
+  [2072] fresh_gift_init_s2c                        s2c  { int login_days, int[] recved_list }
+  [2102] group_purchase_init_s2c                    s2c  { g_p_data[] list }
+  [2152] exp_rush_init_s2c                          s2c  { exp_rush_data[] list }
+  [2158] exp_rush_act_init_s2c                      s2c  { byte act_tag, int left_sec }
+  [2159] exp_rush_act_reinit_s2c                    s2c  { byte act_tag, int left_sec }
+  [2162] exp_rush_crit_act_init_s2c                 s2c  { byte act_tag, int left_sec }
+  [2163] exp_rush_crit_act_reinit_s2c               s2c  { byte act_tag, int left_sec }
+  [2252] guild_boss_init_s2c                        s2c  { int left_count }
+  [2302] hero_discount_init_s2c                     s2c  { h_discount[] list, int cd }
+  [2306] hero_discount_act_tag_init_s2c             s2c  { byte act_tag, int left_sec }
+  [2352] month_act_init_s2c                         s2c  { byte status, int left_sec, int hero_item_protoid, rw[] rewards, byte buy_tag, int chargeid, byte is_new_hero }
+  [2372] acc_charge_init_s2c                        s2c  { byte activity_tag, byte recv_tag_3, byte recv_tag_7, int acc_charge_days, int left_sec }
+  [2373] acc_charge_reinit_s2c                      s2c  { byte activity_tag, byte recv_tag_3, byte recv_tag_7, int acc_charge_days, int left_sec }
+  [2392] acc_quest_init_s2c                         s2c  { byte activity_tag, int star_3_count, int star_4_count, int star_5_count, int[] recved_reward_ids, int left_sec }
+  [2393] acc_quest_reinit_s2c                       s2c  { byte activity_tag, int star_3_count, int star_4_count, int star_5_count, int[] recved_reward_ids, int left_sec }
+  [2411] fandom_init_s2c                            s2c  { byte activity_tag }
+  [2412] fandom_reinit_s2c                          s2c  { byte activity_tag }
+  [2422] horse_init_s2c                             s2c  { horse[] horses }
+  [2442] horse_collect_init_s2c                     s2c  { int[] collect_protoids, int[] prompt_protoids }
+  [2501] facebook_like_init_c2s                     c2s  { (empty) }
+  [2502] facebook_like_init_s2c                     s2c  { int fans_count, ushort reward_level, byte liked }
+  [2505] facebook_share_init_s2c                    s2c  { byte beshared }
+  [2508] facebook_invite_init_s2c                   s2c  { string[] invite_list }
+  [2522] acc_charge_horse_init_s2c                  s2c  { byte activity_tag, byte recv_tag_3, byte recv_tag_7, int acc_charge_days, int left_sec, int day_vip_exp }
+  [2523] acc_charge_horse_reinit_s2c                s2c  { byte activity_tag, byte recv_tag_3, byte recv_tag_7, int acc_charge_days, int left_sec, int day_vip_exp }
+  [2552] dice_init_s2c                              s2c  { dice_data[] reward_list, int[] recved_nums, byte rmder_tag }
+  [2553] dice_reinit_s2c                            s2c  { dice_data[] reward_list, int[] recved_nums, byte rmder_tag }
+  [2572] turntable_init_s2c                         s2c  { int[] recved_list }
+  [2602] k_g_boss_act_init_s2c                      s2c  { int win_times, int[] recved_times, byte act_tag, int left_sec }
+  [2603] k_g_boss_act_reinit_s2c                    s2c  { int win_times, int[] recved_times, byte act_tag, int left_sec }
+  [2631] luxury_ten_hero_free_act_init_s2c          s2c  { byte act_tag, int left_sec, int luxury_times }
+  [2632] luxury_ten_hero_free_act_reinit_s2c        s2c  { byte act_tag, int left_sec, int luxury_times }
+  [2652] treasure_outpost_init_s2c                  s2c  { int next_outpostid, orecord[] records }
+  [2653] treasure_outpost_reinit_s2c                s2c  { int next_outpostid, orecord[] records }
+  [2702] treasure_chip_init_s2c                     s2c  { byte record_tag, treasure_chip[] chip_list, int rob_times, int bought_times }
+  [2703] treasure_chip_reinit_s2c                   s2c  { byte record_tag, treasure_chip[] chip_list, int rob_times, int bought_times }
+  [2852] acc_consume_gold_init_s2c                  s2c  { byte act_tag, int left_sec, int acc_consume_gold, byte[] reced_grade_list }
+  [2853] acc_consume_gold_reinit_s2c                s2c  { byte act_tag, int left_sec, int acc_consume_gold, byte[] reced_grade_list }
+  [2872] fresh_restrict_init_s2c                    s2c  { int[] chargeids }
+  [2873] fresh_restrict_reinit_s2c                  s2c  { int[] chargeids }
+  [2902] guild_bounty_init_s2c                      s2c  { bounty_publish[] publish_list, bounty[] can_reward_list, bounty_pending[] pending_list, byte ongoing_tag }
+  [2903] guild_bounty_reinit_s2c                    s2c  { bounty_publish[] publish_list, bounty[] can_reward_list, bounty_pending[] pending_list, byte ongoing_tag }
+  [2952] like_hate_init_s2c                         s2c  { int like_times, int hate_times, int be_like, int be_hate, like_hate_record[] records }
+  [2953] like_hate_reinit_s2c                       s2c  { int like_times, int hate_times, int be_like, int be_hate, like_hate_record[] records }
+  [2972] x_svr_rush_buy_init_s2c                    s2c  { byte act_tag, int left_sec, int[] bought_list, int refresh_left_sec }
+  [2973] x_svr_rush_buy_reinit_s2c                  s2c  { byte act_tag, int left_sec, int[] bought_list, int refresh_left_sec }
+  [3002] egg_init_s2c                               s2c  { byte act_tag, int left_sec, int free_more, int free_after_sec, int acc_count, int[] recved_list, server_gift[] gift_list }
+  [3003] egg_reinit_s2c                             s2c  { byte act_tag, int left_sec, int free_more, int free_after_sec, int acc_count, int[] recved_list, server_gift[] gift_list }
+  [3051] attr_add_init_s2c                          s2c  { attr_add_data[] list }
+  [3052] attr_add_reinit_s2c                        s2c  { attr_add_data[] list }
+  [3072] dungeon_init_s2c                           s2c  { int fate, int suspend_fate, int last_beaten_index, int[] recved_box, byte can_change_rival_times, byte is_click_dungeon, byte reset_times_today }
+  [3073] dungeon_reinit_s2c                         s2c  { int fate, int suspend_fate, int last_beaten_index, int[] recved_box, byte can_change_rival_times, byte is_click_dungeon, byte reset_times_today }
+  [3151] time_limit_pack_init_s2c                   s2c  { byte act_tag, tl_pack_info[] charge_list, byte buy_tag }
+  [3152] time_limit_pack_reinit_s2c                 s2c  { byte act_tag, tl_pack_info[] charge_list, byte buy_tag }
+  [3161] function_ctrl_init_s2c                     s2c  { int[] close_keys }
+  [3162] function_ctrl_reinit_s2c                   s2c  { int[] close_keys }
+  [3181] hero_reborn_init_s2c                       s2c  { int unpack_cd, int transfer_cd }
+  [3182] hero_reborn_reinit_s2c                     s2c  { int unpack_cd, int transfer_cd }
+  [3202] building_init_s2c                          s2c  { building_data[] list }
+  [3203] building_reinit_s2c                        s2c  { building_data[] list }
+  [3251] hero_exchange_init_s2c                     s2c  { int exchange_cd, int attr_left_sec, int attr_refresh_times, attr_exchange[] attr_exchange_list }
+  [3252] hero_exchange_reinit_s2c                   s2c  { int exchange_cd, int attr_left_sec, int attr_refresh_times, attr_exchange[] attr_exchange_list }
+  [3271] construct_queue_init_s2c                   s2c  { construct_q[] list }
+  [3272] construct_queue_reinit_s2c                 s2c  { construct_q[] list }
+  [3302] area_unlock_init_s2c                       s2c  { int last_click_outpostid, int last_beaten_outpostid, int next_outpostid }
+  [3322] building_res_collect_init_s2c              s2c  { resource_output[] output_list }
+  [3323] building_res_collect_reinit_s2c            s2c  { resource_output[] output_list }
+  [3332] building_alchemy_collect_init_s2c          s2c  { alchemy_output[] output_list }
+  [3333] building_alchemy_collect_reinit_s2c        s2c  { alchemy_output[] output_list }
+  [3342] grid_unlock_init_s2c                       s2c  { int last_beanten_outpostid, int next_outpostid }
+  [3352] internal_quest_init_s2c                    s2c  { internal_quest[] quest_list, int refresh_left }
+  [3353] internal_quest_reinit_s2c                  s2c  { internal_quest[] quest_list, int refresh_left }
+  [3362] tech_init_s2c                              s2c  { tech[] list }
+  [3363] tech_reinit_s2c                            s2c  { tech[] list }
+  [3393] guild_queue_help_init_s2c                  s2c  { int[] applied_queue_ids, int pool_size }
+  [3394] guild_queue_help_reinit_s2c                s2c  { int[] applied_queue_ids, int pool_size }
+  [3412] speedup_gift_init_s2c                      s2c  { byte act_tag, int left_sec, int total_seconds, int[] already_list }
+  [3413] speedup_gift_reinit_s2c                    s2c  { byte act_tag, int left_sec, int total_seconds, int[] already_list }
+  [3431] slg_effects_init_s2c                       s2c  { kav[] effects }
+  [3432] slg_effects_reinit_s2c                     s2c  { kav[] effects }
+  [3461] charge_gift_init_s2c                       s2c  { byte act_tag, int left_sec }
+  [3462] charge_gift_reinit_s2c                     s2c  { byte act_tag, int left_sec }
+  [3502] score_table_init_s2c                       s2c  { byte act_tag, int left_sec, int turn_times, score_table_pool[] pool, score_table_times_box[] boxes, int[] recved_times_boxes, int[] act_hero_horse_ids, score_table_seq_proto[] seq_proto, int[] recved_seq_ids, int[] recved_seq_boxes, byte seq_no_box_status, st_act_ten_recruit_times[] act_ten_recruit_times }
+  [3503] score_table_reinit_s2c                     s2c  { byte act_tag, int left_sec, int turn_times, score_table_pool[] pool, score_table_times_box[] boxes, int[] recved_times_boxes, int[] act_hero_horse_ids, score_table_seq_proto[] seq_proto, int[] recved_seq_ids, int[] recved_seq_boxes, byte seq_no_box_status, st_act_ten_recruit_times[] act_ten_recruit_times }
+  [3552] force_init_s2c                             s2c  { byte force, int last_join_timestamp, byte force_position }
+  [3553] force_reinit_s2c                           s2c  { byte force, int last_join_timestamp, byte force_position }
+  [3602] league_init_s2c                            s2c  { int leagueid, string leaguename, long leaderid, string leadername, int leader_title, int position, int flag, int member_count, string notice, int language, int action, int energy, int[] be_invited_leagueids, long total_fightforce, int league_rank_index, int be_applied_count }
+  [3603] league_reinit_s2c                          s2c  { int leagueid, string leaguename, long leaderid, string leadername, int leader_title, int position, int flag, int member_count, string notice, int language, int action, int energy, int[] be_invited_leagueids, long total_fightforce, int league_rank_index, int be_applied_count }
+  [3702] league_war_init_s2c                        s2c  { int[] gathered_citys, int gatherid, int gathercity, int season_day, byte is_season_be_going_to_end, byte self_report_tag }
+  [3703] league_war_reinit_s2c                      s2c  { int[] gathered_citys, int gatherid, int gathercity, int season_day, byte is_season_be_going_to_end, byte self_report_tag }
+  [3802] mainland_init_s2c                          s2c  { byte position, byte god_force }
+  [3803] mainland_reinit_s2c                        s2c  { byte position, byte god_force }
+  [3852] force_member_quest_init_s2c                s2c  { f_quest[] quests, int left_sec }
+  [3853] force_member_quest_reinit_s2c              s2c  { f_quest[] quests, int left_sec }
+  [3872] force_letter_init_s2c                      s2c  { byte board_tag, byte event_tag }
+  [3873] force_letter_reinit_s2c                    s2c  { byte board_tag, byte event_tag }
+
+### 'register'  (5)
+  [1181] register_gift_error_s2c                    s2c  { int errno }
+  [1183] register_gift_register_c2s                 c2s  { (empty) }
+  [1184] register_gift_update_s2c                   s2c  { byte gift_tag }
+  [1185] register_gift_reward_c2s                   c2s  { (empty) }
+  [1186] register_gift_reward_s2c                   s2c  { rw[] rewards }
+
+### 'auth'  (3)
+  [   4] user_auth_c2s                              c2s  { kvobject[] elems }
+  [   5] user_auth_fail_s2c                         s2c  { int reasonid }
+  [  15] user_auth_succese_s2c                      s2c  { string authkey, string account, string session }
+
+### 'verify'  (2)
+  [2917] guild_bounty_verify_c2s                    c2s  { long bountyid, byte verify_type }
+  [2918] guild_bounty_verify_success_s2c            s2c  { byte verify_type }
+
+====================================================================================================
+KEY STRUCTS
+====================================================================================================
+  display_role     { long roleid, string rolename, int role_title, int rolelevel, int icon, int frame, byte legend_label, byte like_label, byte hate_label }
+  rw               { int protoid, int count }
+  kvobject         { uint key, object value }
+  sitem            { int slot, short count }
