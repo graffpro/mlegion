@@ -5,10 +5,15 @@ import os, json
 # LDPlayer/real device on same LAN -> your Windows LAN IP (confirm with ipconfig).
 HOST_IP = os.environ.get("ML_HOST_IP", "192.168.50.180")
 
-# Ports the client dials (per assets/config.ini).
-PORTAL_PORTS  = [9004]      # android.ml.fragon.com:9004  (main HTTP API)
-ACCOUNT_PORTS = [443, 80]   # account.ml.fragon.com       (auth)
-GATE_PORT     = 9100        # our realtime TCP game gate (we advertise this)
+# Ports the client dials (per assets/config.ini). The client uses https:// for the
+# portal + account hosts, so those are served over TLS (cert from gen_certs.py).
+TLS_PORTS   = [9004, 443]   # android.ml.fragon.com:9004 + account.ml.fragon.com:443
+PLAIN_PORTS = [80]          # plain-http fallback
+GATE_PORT   = 9100          # our realtime TCP game gate (we advertise this)
+
+CERT_DIR   = os.path.join(os.path.dirname(__file__), "certs")
+SERVER_CRT = os.path.join(CERT_DIR, "server.crt")
+SERVER_KEY = os.path.join(CERT_DIR, "server.key")
 
 CLIENT_VERSION = "2.0.1.4"
 

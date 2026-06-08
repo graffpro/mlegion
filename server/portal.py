@@ -8,7 +8,7 @@ refined from the client's real parse behavior (watch logcat + the UNHANDLED line
 
 Run:  python server/portal.py     (TLS comes later once we know if the client needs it)
 """
-import json, threading, datetime
+import json, threading, datetime, ssl, os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 import config
@@ -75,22 +75,31 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def serve(port):
+def serve(port, tls):
     try:
         httpd = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     except OSError as e:
         log(f"!! could not bind port {port}: {e} (skipping)")
         return
-    log(f"listening on 0.0.0.0:{port}")
+    scheme = "http"
+    if tls:
+        if os.path.exists(config.SERVER_CRT) and os.path.exists(config.SERVER_KEY):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(config.SERVER_CRT, config.SERVER_KEY)
+            httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+            scheme = "https"
+        else:
+            log(f"!! no certs ({config.SERVER_CRT}); run gen_certs.py. Serving :{port} as plain http")
+    log(f"listening on {scheme}://0.0.0.0:{port}")
     httpd.serve_forever()
 
 
 if __name__ == "__main__":
-    ports = sorted(set(config.PORTAL_PORTS + config.ACCOUNT_PORTS))
-    threads = [threading.Thread(target=serve, args=(p,), daemon=True) for p in ports]
+    jobs = [(p, True) for p in config.TLS_PORTS] + [(p, False) for p in config.PLAIN_PORTS]
+    threads = [threading.Thread(target=serve, args=(p, tls), daemon=True) for p, tls in jobs]
     for t in threads:
         t.start()
-    log(f"portal up on {ports}; advertising gate at {config.HOST_IP}:{config.GATE_PORT}")
+    log(f"portal up on {[p for p,_ in jobs]}; advertising gate at {config.HOST_IP}:{config.GATE_PORT}")
     try:
         for t in threads:
             t.join()

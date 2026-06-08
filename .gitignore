@@ -8,7 +8,11 @@ captures/
 
 # ── Third-party tools (download separately, see ROADMAP) ──
 tools/Il2CppDumper/
+tools/platform-tools/
 tools/*.zip
+
+# ── Generated TLS certs + PRIVATE KEYS (reproduce with server/gen_certs.py) ──
+server/certs/
 
 # ── Python / Node ──
 __pycache__/
