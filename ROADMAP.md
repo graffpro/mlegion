@@ -12,7 +12,9 @@ world, then add systems one opcode at a time.
 ## Phase 0 — Recon ✅ DONE
 Engine, endpoints, protocol structure, codec all identified. See `FINDINGS.md`.
 
-## Phase 1 — Protocol extraction (foundation)
+## Phase 1 — Protocol extraction (foundation)  ✅ DONE
+_1630 messages → `protocol/messages.json`; `server/codec.py` encodes/decodes any of them
+(round-trip 5/5); framing auto-detected by the sniffer instead of via Ghidra._
 Turn the 1,630 `base_message` classes in `dump.cs` into a machine-readable schema and
 a working codec, so the server can speak the exact wire format.
 - [ ] `tools/extract_protocol.py` — parse `dump.cs`: for every `: base_message`, capture
@@ -24,7 +26,9 @@ a working codec, so the server can speak the exact wire format.
 
 **Deliverable:** library that can read/write any of the 1,630 messages.
 
-## Phase 2 — HTTP portal server
+## Phase 2 — HTTP portal server  ✅ DONE (built + tested; awaiting live client)
+_`server/portal.py` serves https (CA via `gen_certs.py`); `server/gate.py` smart sniffer;
+`SETUP_EMULATOR.md` + `tools/device_setup.ps1` provision the emulator._
 Implement the `/api/channel/*` + `/api/center/*` endpoints so the client passes the
 update/login/server-select screens and asks us for a game gateway.
 - [ ] Static `version/show`, `notice/show`, feature `gameswitch/*` switches.
@@ -35,7 +39,10 @@ update/login/server-select screens and asks us for a game gateway.
 **Deliverable:** client boots, updates clean, shows our server in the list.
 **Test gate:** redirect `*.ml.fragon.com` → our box (hosts file / DNS).
 
-## Phase 3 — TCP login gateway (the first big milestone)
+## Phase 3 — TCP login gateway (the first big milestone)  🟡 DRAFT
+_`server/handshake.py` drives connect→auth→roles→join→init→world; integration-tested against
+a simulated client (13 responses). Blocked on a live capture to confirm framing + whether the
+handshake is encrypted, then flip `ML_RESPOND=1`._
 Get from TCP connect all the way into the game world with a character.
 - [ ] TCP listener speaking CBNetLib framing + heartbeat + serial numbers.
 - [ ] Handle the connect handshake (`tcp_connect_success`, `serial_number`).

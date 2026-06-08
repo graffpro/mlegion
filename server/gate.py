@@ -14,11 +14,15 @@ Handshake RESPONSES (Phase 3) get wired in here once the above is confirmed.
 
 Run:  python server/gate.py
 """
-import asyncio, datetime, struct
-import config, codec
+import asyncio, datetime, struct, os
+import config, codec, handshake
 
 SCHEMA = codec.Schema()
 NAMES = {mid: m["name"] for mid, m in SCHEMA.by_id.items()}
+
+# Sniffer-only until a live capture confirms the framing (and whether it's encrypted).
+# Set ML_RESPOND=1 to let handshake.py actually drive login -> game world.
+RESPOND = os.environ.get("ML_RESPOND") == "1"
 
 
 def hexdump(b, width=16):
@@ -37,6 +41,7 @@ async def handle(reader, writer):
     print(f"\n[{ts}] ================= GATE connection from {peer} =================")
     buf = b""
     shown = None
+    sess = handshake.Session()
     try:
         while True:
             data = await reader.read(4096)
@@ -58,13 +63,17 @@ async def handle(reader, writer):
                           f", len_inclusive={best['inclusive']}  (known msgids={best['known']}) ***")
                 frames, consumed = SCHEMA.read_frames(buf)
                 for mid, name, body in frames:
-                    line = f"    >> msgid={mid:<5} {name:<30} bodylen={len(body)}"
                     try:
                         _, fields = SCHEMA.decode_body(mid, body)
-                        line += f"  {fields}"
+                        disp = fields
                     except Exception as e:
-                        line += f"  (body: {e})"
-                    print(line)
+                        fields, disp = {}, f"(body: {e})"
+                    print(f"    >> msgid={mid:<5} {name:<30} bodylen={len(body)}  {disp}")
+                    if RESPOND:
+                        for rn, rv in handshake.handle(name, fields, sess):
+                            writer.write(SCHEMA.frame(rn, rv))
+                            print(f"    << {rn} {rv}")
+                        await writer.drain()
                 buf = buf[consumed:]
             else:
                 print("    !! no known msgid under any framing hypothesis "
