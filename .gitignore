@@ -9,7 +9,16 @@ captures/
 # ── Third-party tools (download separately, see ROADMAP) ──
 tools/Il2CppDumper/
 tools/platform-tools/
+tools/jdk/
 tools/*.zip
+tools/*.jar
+
+# ── Build output (repackaged APK = derived from copyrighted client) ──
+build/
+
+# ── Runtime server logs ──
+server/*.log
+server/*.err
 
 # ── Generated TLS certs + PRIVATE KEYS (reproduce with server/gen_certs.py) ──
 server/certs/

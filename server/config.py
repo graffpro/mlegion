@@ -1,14 +1,14 @@
 """Shared config for the Magic Legion private server (portal + gate)."""
 import os, json
 
-# IP the Android emulator/device uses to reach THIS machine.
-# LDPlayer/real device on same LAN -> your Windows LAN IP (confirm with ipconfig).
-HOST_IP = os.environ.get("ML_HOST_IP", "192.168.50.180")
+# IP the Android emulator uses to reach THIS machine.
+# LDPlayer (VirtualBox NAT) -> the host is reachable at 10.0.2.2.
+HOST_IP = os.environ.get("ML_HOST_IP", "10.0.2.2")
 
-# Ports the client dials (per assets/config.ini). The client uses https:// for the
-# portal + account hosts, so those are served over TLS (cert from gen_certs.py).
-TLS_PORTS   = [9004, 443]   # android.ml.fragon.com:9004 + account.ml.fragon.com:443
-PLAIN_PORTS = [80]          # plain-http fallback
+# Ports the client dials. With the repackaged APK we point it at plain HTTP (no TLS/CA),
+# so portal serves http on the portal (9004) + account (80) ports.
+TLS_PORTS   = []            # (TLS unused in the repackage approach)
+PLAIN_PORTS = [9004, 80]    # android.*:9004 + account.* :80, served as http
 GATE_PORT   = 9100          # our realtime TCP game gate (we advertise this)
 
 CERT_DIR   = os.path.join(os.path.dirname(__file__), "certs")
