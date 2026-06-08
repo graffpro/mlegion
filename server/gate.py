@@ -1,18 +1,24 @@
 """
 Magic Legion — TCP game gate (Phase 2/3).
 
-CURRENTLY A SNIFFER. Accepts the client's connection, hex-logs every byte, and tries to
-frame packets as [u16 length][u32 msgid][body], labelling the msgid via the extracted
-protocol schema. This confirms the wire format from the client's REAL first packets
-(server_version_c2s=2, tcp_connect_c2s=42, ...). Handshake responses are added in Phase 3
-once framing + encryption are confirmed from these captures.
+CURRENTLY A SMART SNIFFER. Accepts the client's connection, hex-logs every byte, then
+uses codec.detect_framing() to brute-force the header layout from the REAL bytes
+(endian × len-width × msgid-width × inclusive), labels each packet by msgid, and
+best-effort decodes the body via the extracted schema.
+
+  * If known msgids resolve  -> we've confirmed the wire format; bodies decode.
+  * If nothing resolves       -> the handshake is ENCRYPTED (needKey) or the header is
+                                 exotic; the hexdump is what we then analyse.
+
+Handshake RESPONSES (Phase 3) get wired in here once the above is confirmed.
 
 Run:  python server/gate.py
 """
-import asyncio, struct, datetime
-import config
+import asyncio, datetime, struct
+import config, codec
 
-NAMES = config.load_msgid_names()
+SCHEMA = codec.Schema()
+NAMES = {mid: m["name"] for mid, m in SCHEMA.by_id.items()}
 
 
 def hexdump(b, width=16):
@@ -25,27 +31,12 @@ def hexdump(b, width=16):
     return "\n".join(out)
 
 
-def try_frame(buf):
-    """Best-guess framing [u16 len][u32 msgid]. Returns (frames, bytes_consumed).
-    We try this hypothesis live; if msgids don't resolve to known names, the real
-    framing differs and we adjust from the capture."""
-    frames, off = [], 0
-    while len(buf) - off >= 6:
-        ln = struct.unpack_from("<H", buf, off)[0]          # u16 LE total length
-        if ln < 6 or off + ln > len(buf):
-            break
-        msgid = struct.unpack_from("<I", buf, off + 2)[0]   # u32 LE msgid
-        body = buf[off + 6: off + ln]
-        frames.append((msgid, NAMES.get(msgid, "??UNKNOWN??"), body))
-        off += ln
-    return frames, off
-
-
 async def handle(reader, writer):
     peer = writer.get_extra_info("peername")
     ts = datetime.datetime.now().strftime("%H:%M:%S")
-    print(f"\n[{ts}] ==================== GATE connection from {peer} ====================")
+    print(f"\n[{ts}] ================= GATE connection from {peer} =================")
     buf = b""
+    shown = None
     try:
         while True:
             data = await reader.read(4096)
@@ -54,16 +45,35 @@ async def handle(reader, writer):
             buf += data
             print(f"[{peer[0]}] +{len(data)} bytes (buffer={len(buf)}):")
             print(hexdump(data))
-            frames, consumed = try_frame(buf)
-            for msgid, name, body in frames:
-                print(f"    >> FRAME  msgid={msgid:<5} {name:<32} bodylen={len(body)}")
-            if consumed:
+
+            best = codec.detect_framing(buf, NAMES)
+            if best and best["known"]:
+                sig = (best["endian"], best["lenfmt"], best["midfmt"], best["inclusive"])
+                if sig != shown:
+                    shown = sig
+                    codec.apply_framing(best)
+                    end = "LE" if best["endian"] == "<" else "BE"
+                    print(f"    *** DETECTED FRAMING: {end}, len=u{8*struct.calcsize(best['lenfmt'])}"
+                          f", msgid=u{8*struct.calcsize(best['midfmt'])}"
+                          f", len_inclusive={best['inclusive']}  (known msgids={best['known']}) ***")
+                frames, consumed = SCHEMA.read_frames(buf)
+                for mid, name, body in frames:
+                    line = f"    >> msgid={mid:<5} {name:<30} bodylen={len(body)}"
+                    try:
+                        _, fields = SCHEMA.decode_body(mid, body)
+                        line += f"  {fields}"
+                    except Exception as e:
+                        line += f"  (body: {e})"
+                    print(line)
                 buf = buf[consumed:]
-            # Phase 3 TODO: dispatch frames -> send handshake responses.
+            else:
+                print("    !! no known msgid under any framing hypothesis "
+                      "-> stream likely ENCRYPTED (needKey) or exotic header; analyse hex above")
+            # Phase 3 TODO: dispatch frames -> writer.write(SCHEMA.frame(resp, {...}))
     except Exception as e:
         print(f"[{peer[0]}] read error: {e}")
     finally:
-        print(f"[{peer}] ==================== disconnected ====================")
+        print(f"[{peer}] ================= disconnected =================")
         try:
             writer.close()
         except Exception:
@@ -72,8 +82,8 @@ async def handle(reader, writer):
 
 async def main():
     server = await asyncio.start_server(handle, "0.0.0.0", config.GATE_PORT)
-    print(f"[gate] sniffer listening on 0.0.0.0:{config.GATE_PORT}")
-    print(f"[gate] loaded {len(NAMES)} msgid names from the protocol schema")
+    print(f"[gate] smart sniffer listening on 0.0.0.0:{config.GATE_PORT}")
+    print(f"[gate] loaded {len(NAMES)} msgid names; will auto-detect framing from first packet")
     async with server:
         await server.serve_forever()
 
