@@ -7,9 +7,12 @@ uber-apk-signer afterwards (which also zip-aligns).
 
 Usage: python tools/repackage_apk.py   (ML_HOST_IP overrides the host)
 """
-import zipfile, os
+import zipfile, os, re
 
 HOST = os.environ.get("ML_HOST_IP", "10.0.2.2")
+# Services whose URL carries no port default to :80; over adb reverse the guest can't bind
+# privileged port 80, so fold every bare-host URL onto the portal port (it routes by path).
+PORTAL_PORT = os.environ.get("ML_PORTAL_PORT", "9004")
 SRC = r"C:\Users\NoteBook\Downloads\Magic Legion - Hero Legend_2.0.1.4_APKPure.apk"
 OUTDIR = r"C:\Users\NoteBook\Documents\magic-legion\build"
 OUT = os.path.join(OUTDIR, "ml_repacked_unsigned.apk")
@@ -17,14 +20,27 @@ os.makedirs(OUTDIR, exist_ok=True)
 
 HOSTS = ["android.ml.fragon.com", "android1.ml.fragon.com",
          "account.ml.fragon.com", "account1.ml.fragon.com",
-         "push.ml.fragon.com", "gmip.ml.fragon.com", "translate.ml.fragon.com"]
+         "push.ml.fragon.com", "gmip.ml.fragon.com", "translate.ml.fragon.com",
+         # old CDN / resource hosts — redirect so the game stops hanging on the dead CDN
+         "op-cdn.prishen.com", "mfjt-i.akamaized.net"]
 
 
 def patch(text):
-    for h in HOSTS:
-        text = text.replace(h, HOST)
-    text = text.replace(f"https://{HOST}", f"http://{HOST}")  # downgrade OUR host to http
-    return text
+    # NB: leave the [HOST] alias lines (host1=/host2=) untouched. The game's parserHost()
+    # builds a dict keyed by those values and throws "same key already added" if we collapse
+    # the distinct fragon hostnames onto one IP. Connections use the CONFIG_OF_* URLs anyway.
+    out = []
+    for line in text.splitlines(keepends=True):
+        if re.match(r"\s*host\d+\s*=", line):
+            out.append(line)
+            continue
+        for h in HOSTS:
+            line = line.replace(h, HOST)
+        # bare host (no port -> 80) -> portal port, so one adb-reverse port covers everything
+        line = re.sub(rf"(https?)://{re.escape(HOST)}(?![\d:])", f"http://{HOST}:{PORTAL_PORT}", line)
+        line = line.replace(f"https://{HOST}", f"http://{HOST}")  # downgrade the rest to http
+        out.append(line)
+    return "".join(out)
 
 
 zin = zipfile.ZipFile(SRC, "r")
