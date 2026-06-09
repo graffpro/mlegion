@@ -90,8 +90,9 @@ async def handle(reader, writer):
 
 
 async def main():
-    server = await asyncio.start_server(handle, "0.0.0.0", config.GATE_PORT)
-    print(f"[gate] smart sniffer listening on 0.0.0.0:{config.GATE_PORT}")
+    server = await asyncio.start_server(handle, "0.0.0.0", config.GATE_BIND)
+    print(f"[gate] smart sniffer listening on 0.0.0.0:{config.GATE_BIND} "
+          f"(advertised to client as :{config.GATE_PORT})")
     print(f"[gate] loaded {len(NAMES)} msgid names; will auto-detect framing from first packet")
     async with server:
         await server.serve_forever()
