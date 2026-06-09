@@ -37,18 +37,45 @@ def typ(n):
     return n.split("_", 1)[0] if "_" in n else n
 
 
-# 3) smallest donor per type (+ a global tiny fallback for typeless/donor-less kinds)
-donors, gmin = {}, None
+# 3) pick a donor per type. For PREFAB bundles (ui_) the game loads prefabs and indexes the
+#    result array, so a tiny donor (few prefabs) -> IndexOutOfRange; use the LARGEST present
+#    bundle of that type (most prefabs) instead. Atlas/fx types just need to be structurally
+#    valid, so the smallest keeps the APK lean.
+PREFAB_TYPES = {"ui"}
+donors = {}
 for n in present:
     sz = z.getinfo(have[n]).file_size
-    if gmin is None or sz < gmin[1]:
-        gmin = (n, sz)
     if "_" in n:
         t = typ(n)
-        if t not in donors or sz < donors[t][1]:
+        big = t in PREFAB_TYPES
+        if t not in donors or (sz > donors[t][1] if big else sz < donors[t][1]):
             donors[t] = (n, sz)
+# Global fallback for donor-less kinds (e.g. gamedata): the smallest asset that is a REAL
+# UnityFS bundle. The plain global-smallest is version.txt / config xml / files.xml, which the
+# loader can't read as an archive ("Unable to read header from archive file") -> must be a bundle.
+gmin = None
+for n in sorted(present, key=lambda x: z.getinfo(have[x]).file_size):
+    if z.read(have[n])[:7] == b"UnityFS":
+        gmin = (n, z.getinfo(have[n]).file_size)
+        break
 
-# 4) write a placeholder for every lost asset
+# 4) write a placeholder for every lost asset — each with a UNIQUE internal CAB name so Unity
+#    won't reject it with "another AssetBundle with the same files is already loaded" (all of
+#    our copies share the donor's CAB otherwise). The CAB-<hex> string is in plaintext near the
+#    UnityFS header; we overwrite the hex in place (same length) with a per-asset hash.
+def uniquify_cab(data, asset_name):
+    # The CAB id is exactly 32 hex chars and appears BOTH in the bundle directory AND inside the
+    # texture's m_StreamData path ("archive:/CAB-<id>/CAB-<id>.resS"). Match exactly 32 (a greedy
+    # match grabs a trailing flag byte and then misses the 32-char path refs -> broken texture ->
+    # the client re-extracts forever). Replace every occurrence with a per-asset hash (also 32 hex).
+    m = re.search(rb"CAB-([0-9a-f]{32})", data)
+    if not m:
+        return data
+    orig = m.group(1)
+    new = hashlib.md5(asset_name.encode()).hexdigest().encode()
+    return data.replace(b"CAB-" + orig, b"CAB-" + new)
+
+
 patches, cache = {}, {}
 added = total = 0
 by_type = {}
@@ -58,7 +85,7 @@ for name, v, s, zz in entries:
     dn = donors.get(typ(name), gmin)[0]
     if dn not in cache:
         cache[dn] = z.read(have[dn])
-    data = cache[dn]
+    data = uniquify_cab(cache[dn], name)
     with open(os.path.join(ASSETS, name), "wb") as f:
         f.write(data)
     patches[name] = (hashlib.md5(data).hexdigest(), len(data))
