@@ -55,18 +55,31 @@ def build_empty_textasset_bundle():
             keep[pid] = obj
     sf.objects = keep
     d = sf.objects[ta].read(); d.m_Script = ""; d.save()
-    for pid, obj in keep.items():
-        if obj.type.name == "AssetBundle":
-            ab = obj.read()
-            for attr in ("m_PreloadTable", "m_Container", "m_Dependencies"):
-                if hasattr(ab, attr):
-                    setattr(ab, attr, [])
-            ab.save()
+    # Each of the 233 data tables is loaded via AssetLoader.loadAsset(path) which resolves the
+    # path through the bundle's m_Container. We can't supply the real protobuf tables (lost), but
+    # we can point EVERY table path (and bare table name) at this one empty TextAsset, so every
+    # lookup resolves to an empty-but-valid table instead of null (initAllTables NullReference).
+    md = z.read("assets/bin/Data/Managed/Metadata/global-metadata.dat")
+    tables = sorted(set(s.decode("ascii") for s in md.split(b"\x00")
+                        if re.fullmatch(rb"[a-z][a-z0-9_]{1,48}_proto", s)))
+    ab_pid = next(p for p, o in keep.items() if o.type.name == "AssetBundle")
+    ab = sf.objects[ab_pid].read()
+    tmpl = next((info for _, info in ab.m_Container if info.asset.m_PathID == ta),
+                ab.m_Container[0][1])
+    tmpl.preloadIndex = 0; tmpl.preloadSize = 0
+    tmpl.asset.m_FileID = 0; tmpl.asset.m_PathID = ta
+    cont = []
+    for t in tables:
+        cont.append(("assets/ylresources/gamedata/%s.txt" % t, tmpl))
+        cont.append((t, tmpl))
+    ab.m_Container = cont
+    ab.m_PreloadTable = []
+    ab.save()
     return bf.save()
 
 
 EMPTY_TA = build_empty_textasset_bundle()
-print("empty-TextAsset gamedata bundle:", len(EMPTY_TA), "bytes")
+print("gamedata stub bundle:", len(EMPTY_TA), "bytes; all proto-table paths -> 1 empty TextAsset")
 
 # 1) restore the pristine manifests (undo the earlier surgery / files_full=files.xml)
 for mf in ("bundle.xml", "files.xml", "files_full.xml"):
