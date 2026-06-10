@@ -39,10 +39,11 @@ update/login/server-select screens and asks us for a game gateway.
 **Deliverable:** client boots, updates clean, shows our server in the list.
 **Test gate:** redirect `*.ml.fragon.com` → our box (hosts file / DNS).
 
-## Phase 3 — TCP login gateway (the first big milestone)  🟡 DRAFT
-_`server/handshake.py` drives connect→auth→roles→join→init→world; integration-tested against
-a simulated client (13 responses). Blocked on a live capture to confirm framing + whether the
-handshake is encrypted, then flip `ML_RESPOND=1`._
+## Phase 3 — TCP login gateway (the first big milestone)  ✅ DONE
+_`server/handshake.py` drives connect→auth→roles→join→init→world; `server/test_login.py` proves it
+over a real TCP socket. **Framing CONFIRMED from a live exchange** (LE / u16 length / u32 msgid /
+length-inclusive — the gate auto-detects it); the handshake is NOT encrypted for our flow, so
+`ML_RESPOND=1` drives login→world directly. No Ghidra/`needKey` work was needed._
 Get from TCP connect all the way into the game world with a character.
 - [ ] TCP listener speaking CBNetLib framing + heartbeat + serial numbers.
 - [ ] Handle the connect handshake (`tcp_connect_success`, `serial_number`).
@@ -52,10 +53,30 @@ Get from TCP connect all the way into the game world with a character.
 
 **Deliverable:** you log in and see your hero / main scene served entirely by us.
 
-## Phase 4+ — Game systems, incrementally
-Implement handlers opcode-by-opcode, by gameplay area, each independently testable:
-heroes & bag → battle/stage → shop/gacha → arena (PvP server) → guild → mail → events.
-Drive priority by what the client requests on each screen (log unknown opcodes).
+## Phase 4 — In-world gameplay  ✅ DONE (stateful)
+_`server/handshake.py` now streams the **full init flood (113 modules)** and runs a **stateful**
+session: `role_move` commits the player's position, `server_battle_create` wins → `role_levelup`,
+plus name-check / reliability / exit-logout. `server/test_login.py` walks login→world→play (walk →
+battle → walk) = **14/14 checkpoints**, verified on the inline brain AND the live gate. `python run.py`
+is a one-click demo of the whole thing._
+
+## Phase 4+ — remaining game systems (ceiling reached)
+The deeper systems (bag/heroes/attributes/full battles/shop/gacha/arena/guild) ride on
+`kvobject{uint key, object value}` messages whose **polymorphic value type can only be confirmed
+from a LIVE client packet** — and the original client is **unrenderable** (see Outcome), so there is
+no client to capture from. The codec (`server/codec.py`) handles everything except this polymorphic
+`object`; that is the single remaining gap, and it is gated on the lost client, not on effort.
+
+---
+
+## Outcome — where the revival lands
+- **Server: revived & proven.** Login → enter world → stateful in-world play, all served by us and
+  asserted end-to-end. This is the real, durable deliverable.
+- **Original client: runs on our build but cannot render.** It's a *thin* client — ~79% of its assets
+  (all 233 proto data tables + most UI art) lived only on the dead CDN and are gone. We made it take
+  100% from our build (0 downloads, 8 loading blockers cleared via `tools/repackage_apk.py` +
+  `tools/fill_placeholders.py` + UnityPy), but structured **data cannot be faked** — it stalls at
+  "data init". So the client is a proven *transport* for the server, not a playable UI.
 
 ---
 
