@@ -14,6 +14,7 @@ and each placeholdered entry's v/s/z is rewritten to the placeholder's so any si
 the loader applies still passes.
 """
 import zipfile, re, hashlib, os
+import UnityPy
 
 APK = r"C:\Users\NoteBook\Downloads\Magic Legion - Hero Legend_2.0.1.4_APKPure.apk"
 DEC = r"C:\Users\NoteBook\Documents\magic-legion\build\ml_decoded"
@@ -21,6 +22,51 @@ ASSETS = os.path.join(DEC, "assets")
 
 z = zipfile.ZipFile(APK)
 have = {n.split("/")[-1]: n for n in z.namelist() if n.startswith("assets/")}
+
+
+def build_empty_textasset_bundle():
+    """A valid, runtime-compatible UnityFS bundle whose only content object is an EMPTY
+    TextAsset. gamedata_* are loaded as bundles and parsed by GameProtoManager.initAllTables,
+    which expects a TextAsset (protobuf) inside; a texture placeholder -> null -> crash, and a
+    cross-version frankenbundle -> "not compatible with this newer Unity runtime". So we take a
+    NATIVE (2017.4.40c1) bundle that already contains a TextAsset, strip every other object, and
+    empty the TextAsset (empty protobuf = empty-but-valid table). Pick the smallest such donor."""
+    best = None
+    for n in have:
+        try:
+            raw = z.read(have[n])
+            if raw[:7] != b"UnityFS" or (best and len(raw) >= best[1]):
+                continue
+            e = UnityPy.load(raw)
+            if any(o.type.name == "TextAsset" for o in e.objects):
+                best = (n, len(raw))
+        except Exception:
+            pass
+    env = UnityPy.load(z.read(have[best[0]]))
+    bf = env.file
+    cab = list(bf.files.keys())[0]
+    sf = bf.files[cab]
+    keep, ta = {}, None
+    for pid, obj in sf.objects.items():
+        if obj.type.name == "AssetBundle":
+            keep[pid] = obj
+        elif obj.type.name == "TextAsset" and ta is None:
+            ta = pid
+            keep[pid] = obj
+    sf.objects = keep
+    d = sf.objects[ta].read(); d.m_Script = ""; d.save()
+    for pid, obj in keep.items():
+        if obj.type.name == "AssetBundle":
+            ab = obj.read()
+            for attr in ("m_PreloadTable", "m_Container", "m_Dependencies"):
+                if hasattr(ab, attr):
+                    setattr(ab, attr, [])
+            ab.save()
+    return bf.save()
+
+
+EMPTY_TA = build_empty_textasset_bundle()
+print("empty-TextAsset gamedata bundle:", len(EMPTY_TA), "bytes")
 
 # 1) restore the pristine manifests (undo the earlier surgery / files_full=files.xml)
 for mf in ("bundle.xml", "files.xml", "files_full.xml"):
@@ -82,10 +128,14 @@ by_type = {}
 for name, v, s, zz in entries:
     if name in present:
         continue
-    dn = donors.get(typ(name), gmin)[0]
-    if dn not in cache:
-        cache[dn] = z.read(have[dn])
-    data = uniquify_cab(cache[dn], name)
+    if typ(name) == "gamedata":          # data tables need a real (empty) TextAsset, not a texture
+        base = EMPTY_TA
+    else:
+        dn = donors.get(typ(name), gmin)[0]
+        if dn not in cache:
+            cache[dn] = z.read(have[dn])
+        base = cache[dn]
+    data = uniquify_cab(base, name)
     with open(os.path.join(ASSETS, name), "wb") as f:
         f.write(data)
     patches[name] = (hashlib.md5(data).hexdigest(), len(data))
