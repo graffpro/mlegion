@@ -20,10 +20,15 @@ DEMO_ROLE = {"roleid": 10001, "name": "Hero", "protoid": 1, "level": 1, "vip": 0
 
 
 class Session:
+    """Per-connection game state. Phase 4 makes the server stateful (not just an echo): the
+    player's position, level and battle count live here and evolve as the client plays."""
     def __init__(self):
         self.account = None
         self.roleid = None
         self.joined = False
+        self.x = self.y = 0          # world position (updated by role_move)
+        self.level = 1               # role level (grows on battle win)
+        self.battles = 0
 
 
 def default_values(msg_name):
@@ -112,11 +117,18 @@ def handle(name, fields, sess):
         t = f.get("time", 0)
         return [("heart_beat_s2c", {"time": t, "stime": t})]
 
-    # ── Phase 4: in-world gameplay ─────────────────────────────────────────────
-    if name == "role_move_c2s":                 # walk in the world -> server broadcasts it back
+    # ── Phase 4: in-world gameplay (STATEFUL) ──────────────────────────────────
+    if name == "role_move_c2s":                 # walk -> commit the new position to the session
+        sess.x = f.get("targetx", sess.x)
+        sess.y = f.get("targety", sess.y)
         return [("role_move_s2c", {"id": sess.roleid or 0, "time": f.get("time", 0),
                                    "posx": f.get("posx", 0), "posy": f.get("posy", 0),
-                                   "targetx": f.get("targetx", 0), "targety": f.get("targety", 0)})]
+                                   "targetx": sess.x, "targety": sess.y})]
+    if name == "server_battle_create_c2s":      # fight -> win, gain a level
+        sess.battles += 1
+        sess.level += 1
+        return [("server_battle_create_success_s2c", {}),
+                ("role_levelup_s2c", {"b_attrs": [], "a_attrs": []})]
     if name == "user_request_info_c2s":         # reliability re-request -> ack the serial
         return [("user_request_info_s2c", {"sn": f.get("sn", 0)})]
     if name == "tcp_serial_number_ack_c2s":     # client acking our serial; nothing to send back

@@ -66,8 +66,10 @@ async def run_client(seen):
         c2s("role_join_game_c2s", roleid=roleid, mac_address="00:11:22:33:44:55"),
         c2s("init_module_c2s"),
         c2s("role_join_world_c2s"),
-        # ── Phase 4: in-world play session ──
+        # ── Phase 4: a stateful in-world play session ──
         c2s("role_move_c2s", time=100, posx=10, posy=10, targetx=24, targety=31),
+        c2s("server_battle_create_c2s"),                       # fight -> win + level up
+        c2s("role_move_c2s", time=200, posx=24, posy=31, targetx=40, targety=12),
         c2s("chat_check_rolename_c2s", rolename="RevivalHero"),
         c2s("user_request_info_c2s", sn=7),
         c2s("heart_beat_c2s", time=12345),
@@ -122,7 +124,9 @@ async def main():
         ("init_role_info_s2c",         "role attributes streamed"),
         ("init_role_finish_s2c",       "world-state init finished"),
         ("role_join_map_s2c",          "standing in the game world"),
-        ("role_move_s2c",              "moved in the world (Phase 4)"),
+        ("role_move_s2c",              "walked the world (Phase 4)"),
+        ("server_battle_create_success_s2c", "won a battle (Phase 4)"),
+        ("role_levelup_s2c",           "leveled up (Phase 4)"),
         ("chat_check_rolename_res_s2c","name-check answered (Phase 4)"),
         ("user_request_info_s2c",      "reliability re-request answered (Phase 4)"),
         ("heart_beat_s2c",             "heartbeat / keepalive answered"),
