@@ -52,18 +52,20 @@ def _role_attr(roleid):
 
 
 def _init_flood():
-    """Minimal init set the client gets on init_module_c2s. Empty/default contents; the real
-    required set + values come from capture iteration. Only includes inits with no kvobject."""
-    names = ["hero_init_s2c", "init_onhands_item_s2c", "skill_init_s2c",
-             "field_init_s2c", "quest_list_init_s2c", "vip_init_s2c",
-             "mail_info_init_s2c", "init_friend_s2c", "arena_init_s2c"]
+    """Phase 4: the FULL init flood. Every *_init_s2c the schema can encode without a
+    polymorphic `object`/`kvobject` (those need a live capture for their value typing) is sent
+    default/zeroed, in msg_id order — enough world-state to populate every client module so it
+    clears the loading gate and renders the world UI. ~150 messages vs the old hand-picked 9."""
     flood = []
-    for n in names:
-        if n not in SCHEMA.by_name:
+    for name, m in sorted(SCHEMA.by_name.items(), key=lambda kv: kv[1]["msg_id"] or 0):
+        if m["msg_id"] is None or not name.endswith("_init_s2c") or _has_object(name):
             continue
-        if _has_object(n):
-            continue  # skip kvobject-bearing inits until the scheme is confirmed
-        flood.append((n, default_values(n)))
+        try:
+            vals = default_values(name)
+            SCHEMA.frame(name, vals)            # prove it encodes before committing it
+        except Exception:
+            continue
+        flood.append((name, vals))
     return flood
 
 
@@ -109,7 +111,25 @@ def handle(name, fields, sess):
     if name == "heart_beat_c2s":
         t = f.get("time", 0)
         return [("heart_beat_s2c", {"time": t, "stime": t})]
-    return []  # unhandled -> caller logs it (drives Phase 4)
+
+    # ── Phase 4: in-world gameplay ─────────────────────────────────────────────
+    if name == "role_move_c2s":                 # walk in the world -> server broadcasts it back
+        return [("role_move_s2c", {"id": sess.roleid or 0, "time": f.get("time", 0),
+                                   "posx": f.get("posx", 0), "posy": f.get("posy", 0),
+                                   "targetx": f.get("targetx", 0), "targety": f.get("targety", 0)})]
+    if name == "user_request_info_c2s":         # reliability re-request -> ack the serial
+        return [("user_request_info_s2c", {"sn": f.get("sn", 0)})]
+    if name == "tcp_serial_number_ack_c2s":     # client acking our serial; nothing to send back
+        return []
+    if name == "chat_check_rolename_c2s":       # name validation -> OK
+        return [("chat_check_rolename_res_s2c", {"rolename": f.get("rolename", ""), "res": 1})]
+    if name == "lookup_role_c2s":
+        return [("lookup_role_s2c", {"lookup_res": 0})]
+    if name == "user_exit_c2s":
+        return [("user_exit_s2c", {"errno": 0})]
+    if name == "user_logout_c2s":
+        return [("user_logout_s2c", {"roles": [DEMO_ROLE]})]
+    return []  # unhandled -> caller logs it (drives further Phase 4 work)
 
 
 if __name__ == "__main__":

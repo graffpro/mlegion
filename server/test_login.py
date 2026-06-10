@@ -66,6 +66,10 @@ async def run_client(seen):
         c2s("role_join_game_c2s", roleid=roleid, mac_address="00:11:22:33:44:55"),
         c2s("init_module_c2s"),
         c2s("role_join_world_c2s"),
+        # ── Phase 4: in-world play session ──
+        c2s("role_move_c2s", time=100, posx=10, posy=10, targetx=24, targety=31),
+        c2s("chat_check_rolename_c2s", rolename="RevivalHero"),
+        c2s("user_request_info_c2s", sn=7),
         c2s("heart_beat_c2s", time=12345),
     ]
     for name, vals in flow:
@@ -117,7 +121,10 @@ async def main():
         ("role_join_game_success_s2c", "character joined the game"),
         ("init_role_info_s2c",         "role attributes streamed"),
         ("init_role_finish_s2c",       "world-state init finished"),
-        ("role_join_map_s2c",          "STANDING IN THE GAME WORLD"),
+        ("role_join_map_s2c",          "standing in the game world"),
+        ("role_move_s2c",              "moved in the world (Phase 4)"),
+        ("chat_check_rolename_res_s2c","name-check answered (Phase 4)"),
+        ("user_request_info_s2c",      "reliability re-request answered (Phase 4)"),
         ("heart_beat_s2c",             "heartbeat / keepalive answered"),
     ]
     print("\n" + "=" * 74)
@@ -128,13 +135,20 @@ async def main():
         hit = name in seen
         ok += hit
         print(f"   [{'OK' if hit else '!!'}]  {desc:<40} ({name})")
+    inits = sorted(n for n in seen if n.endswith("_init_s2c"))
+    print(f"   [{'OK' if len(inits) >= 20 else '..'}]  full init flood: "
+          f"{len(inits)} module-init messages streamed")
     world = "role_join_map_s2c" in seen
+    played = world and "role_move_s2c" in seen
     print("-" * 74)
-    if world:
+    if played:
         m = seen["role_join_map_s2c"]
-        print(f"   {ok}/{len(checkpoints)} checkpoints passed.")
-        print(f"   *** SERVER PROVEN — client reached the world: "
-              f"mapid={m.get('mapid')}, faction={m.get('battle_faction')} ***")
+        print(f"   {ok}/{len(checkpoints)} checkpoints passed, {len(inits)} modules initialised.")
+        print(f"   *** SERVER PROVEN — login -> world -> in-world play: "
+              f"map={m.get('mapid')}, moved to ({seen['role_move_s2c'].get('targetx')},"
+              f"{seen['role_move_s2c'].get('targety')}) ***")
+    elif world:
+        print(f"   {ok}/{len(checkpoints)} — reached the world but a Phase-4 step failed.")
     else:
         print(f"   {ok}/{len(checkpoints)} — did not reach the world (see log above).")
     if server is not None:
